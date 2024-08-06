@@ -3,19 +3,19 @@ package dblite
 import (
 	"fmt"
 	"github.com/franela/goblin"
-	util "github.com/intdxdt/goreflect"
+	ref "github.com/intdxdt/goreflt"
 	"os"
 	"testing"
 )
 
-// DROP TABLE IF EXISTS model;
 const UserSQLModel = `
+DROP TABLE IF EXISTS model;
 CREATE TABLE IF NOT EXISTS model (
 	id            		 INTEGER NOT NULL PRIMARY KEY,
 	email         		 TEXT NOT NULL UNIQUE,
 	name          		 TEXT DEFAULT '',
 	address   			 TEXT DEFAULT '',
-	active        		 INTEGER DEFAULT 0
+	active        		 INTEGER DEFAULT 1
 );
 `
 
@@ -31,18 +31,18 @@ func NewModel() *Model {
 	return &Model{Id: -1}
 }
 
-func (user *Model) Clone() *Model {
-	var o = *user
+func (model *Model) Clone() *Model {
+	var o = *model
 	return &o
 }
 
-func (user *Model) TableName() string {
-	return "user"
+func (model *Model) TableName() string {
+	return "model"
 }
 
-func (user *Model) FieldRefMap() map[string]any {
-	var fields = user.Fields()
-	var refs, err = util.GetFieldReferences(user, fields)
+func (model *Model) FieldRefMap() map[string]any {
+	var fields = model.Fields()
+	var refs, err = ref.GetFieldReferences(model, fields)
 	if err != nil {
 		panic(err)
 	}
@@ -53,16 +53,22 @@ func (user *Model) FieldRefMap() map[string]any {
 	return dict
 }
 
-func (user *Model) FilterFieldReferences(fields []string) ([]string, []any, error) {
-	return util.FilterFieldReferences(fields, user.FieldRefMap())
+func (model *Model) FilterFieldReferences(fields []string) ([]string, []any, error) {
+	return ref.FilterFieldReferences(fields, model.FieldRefMap())
 }
 
-func (user *Model) Fields() []string {
-	var fields, err = util.GetJSONTaggedFields(user)
+func (model *Model) Fields() []string {
+	var fields, err = ref.GetJSONTaggedFields(model)
 	if err != nil {
 		panic(err)
 	}
 	return fields
+}
+
+func (model *Model) Insert() (bool, error) {
+	return Insert(Instance.Conn, model, []string{
+		`email`, `name`, `address`,
+	}, On{})
 }
 
 func initDB() {
@@ -92,7 +98,14 @@ func TestDBLite(t *testing.T) {
 
 	g.Describe("Tests Model Insert", func() {
 		g.It("user insert", func() {
-			g.Assert(12).Equal(12)
+			var m = NewModel()
+			m.Email = "email@db.com"
+			m.Name = "model"
+			m.Address = "123 db street"
+			m.Address = "123 db street"
+			bln, err := m.Insert()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
 		})
 
 	})

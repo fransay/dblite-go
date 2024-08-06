@@ -2,8 +2,6 @@ package dblite
 
 import (
 	"database/sql"
-	"errors"
-	"github.com/intdxdt/fileutil"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"time"
@@ -29,9 +27,6 @@ type Database struct {
 }
 
 func NewDatabase(dbpath string) (*Database, error) {
-	if !fileutil.IsFile(dbpath) {
-		return nil, errors.New("database file not found")
-	}
 	conn, err := sql.Open("sqlite3", dbpath)
 	if err != nil {
 		return nil, err
