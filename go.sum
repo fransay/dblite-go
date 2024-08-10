@@ -1,6 +1,6 @@
 github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf h1:NrF81UtW8gG2LBGkXFQFqlfNnvMt9WdB46sfdJY4oqc=
 github.com/franela/goblin v0.0.0-20211003143422-0a4f594942bf/go.mod h1:VzmDKDJVZI3aJmnRI9VjAn9nJ8qPPsN1fqzr9dqInIo=
-github.com/intdxdt/goreflt v0.0.2 h1:MIZyWFI1OPDKQWyri0+IbYavGWF1pmqiyPRx9HRIyo4=
-github.com/intdxdt/goreflt v0.0.2/go.mod h1:BkZjsMaRQRKVPaJ0S6Zh3LtbLnbhDboO43IbA31S2DQ=
+github.com/intdxdt/goreflect v1.2.0 h1:GJbFThcEusI2Dc/pNNQ8ZGQNGsBDYYOAl9Ncb3Gwkdg=
+github.com/intdxdt/goreflect v1.2.0/go.mod h1:wo3jTnUHb6Fv1pR/wFvlzG7eiESDW2JZ46z1uhmZMpM=
 github.com/mattn/go-sqlite3 v1.14.22 h1:2gZY6PC6kBnID23Tichd1K+Z0oS6nE/XwU+Vz/5o4kU=
 github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=

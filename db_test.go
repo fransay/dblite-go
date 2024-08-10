@@ -3,7 +3,7 @@ package dblite
 import (
 	"fmt"
 	"github.com/franela/goblin"
-	ref "github.com/intdxdt/goreflt"
+	ref "github.com/intdxdt/goreflect"
 	"os"
 	"testing"
 )
