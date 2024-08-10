@@ -7,4 +7,4 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.22
 )
 
-require github.com/intdxdt/goreflect v1.3.0
+require github.com/intdxdt/goreflect v1.4.0
