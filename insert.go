@@ -3,13 +3,20 @@ package dblite
 import (
 	"database/sql"
 	"fmt"
+	ref "github.com/intdxdt/goreflect"
 )
 
 func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (bool, error) {
-	var fields, colRefs, err = model.FilterFieldReferences(model.Fields())
+	var fields, err = ref.Fields(model)
 	if err != nil {
 		return false, err
 	}
+
+	fields, colRefs, err := ref.FilterFieldReferences(fields, model)
+	if err != nil {
+		return false, err
+	}
+
 	var cols = make([]string, 0, len(fields))
 	var values = make([]any, 0, len(fields))
 
@@ -51,13 +58,18 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (boo
 	return count == 1, nil
 }
 
-func InsertMany[T ITable[T]](database *Database, models []T, insertCols []string, on On) error {
+func InsertMany[T ITable[T]](database *Database, models []T, insertCols []string, on On) (error, error) {
 	if len(models) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	var getColumnsValues = func(model T) ([]string, []any, error) {
-		var fields, colRefs, err = model.FilterFieldReferences(model.Fields())
+		var fields, err = ref.Fields(model)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		fields, colRefs, err := ref.FilterFieldReferences(fields, model)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -78,7 +90,7 @@ func InsertMany[T ITable[T]](database *Database, models []T, insertCols []string
 	var model = models[0]
 	var cols, _, err = getColumnsValues(model)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
 	var columns = ColumnNames(cols)
@@ -99,7 +111,7 @@ func InsertMany[T ITable[T]](database *Database, models []T, insertCols []string
 	for _, model = range models {
 		_, values, err := getColumnsValues(model)
 		if err != nil {
-			return err
+			return err, nil
 		}
 		if len(on.On) > 0 {
 			for _, v := range on.Arguments {

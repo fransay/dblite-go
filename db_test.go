@@ -3,7 +3,6 @@ package dblite
 import (
 	"fmt"
 	"github.com/franela/goblin"
-	ref "github.com/intdxdt/goreflect"
 	"os"
 	"testing"
 )
@@ -31,6 +30,10 @@ func NewModel() *Model {
 	return &Model{Id: -1}
 }
 
+func (model *Model) New() *Model {
+	return NewModel()
+}
+
 func (model *Model) Clone() *Model {
 	var o = *model
 	return &o
@@ -38,31 +41,6 @@ func (model *Model) Clone() *Model {
 
 func (model *Model) TableName() string {
 	return "model"
-}
-
-func (model *Model) FieldRefMap() map[string]any {
-	var fields = model.Fields()
-	var refs, err = ref.GetFieldReferences(model, fields)
-	if err != nil {
-		panic(err)
-	}
-	var dict = make(map[string]any, len(fields))
-	for i, field := range fields {
-		dict[field] = refs[i]
-	}
-	return dict
-}
-
-func (model *Model) FilterFieldReferences(fields []string) ([]string, []any, error) {
-	return ref.FilterFieldReferences(fields, model.FieldRefMap())
-}
-
-func (model *Model) Fields() []string {
-	var fields, err = ref.GetJSONTaggedFields(model)
-	if err != nil {
-		panic(err)
-	}
-	return fields
 }
 
 func (model *Model) Insert() (bool, error) {

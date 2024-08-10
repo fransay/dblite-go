@@ -3,10 +3,16 @@ package dblite
 import (
 	"database/sql"
 	"fmt"
+	ref "github.com/intdxdt/goreflect"
 )
 
 func UpdateByExclusion[T ITable[T]](conn *sql.DB, model T, excludeCols []string, wc WhereClause) (bool, error) {
-	var fields, _, err = model.FilterFieldReferences(model.Fields())
+	var fields, err = ref.Fields(model)
+	if err != nil {
+		return false, err
+	}
+
+	fields, _, err = ref.FilterFieldReferences(fields, model)
 	if err != nil {
 		return false, err
 	}
@@ -23,10 +29,16 @@ func UpdateByExclusion[T ITable[T]](conn *sql.DB, model T, excludeCols []string,
 }
 
 func Update[T ITable[T]](conn *sql.DB, model T, updateCols []string, wc WhereClause) (bool, error) {
-	var fields, colRefs, err = model.FilterFieldReferences(model.Fields())
+	var fields, err = ref.Fields(model)
 	if err != nil {
 		return false, err
 	}
+
+	fields, colRefs, err := ref.FilterFieldReferences(fields, model)
+	if err != nil {
+		return false, err
+	}
+
 	var cols = make([]string, 0, len(fields))
 	var values = make([]any, 0, len(fields))
 

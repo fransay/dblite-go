@@ -4,15 +4,20 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	ref "github.com/intdxdt/goreflect"
 )
 
 func Query[T ITable[T]](conn *sql.DB, model T, where ...WhereClause) (T, error) {
-	return QueryByColumnNames(conn, model, model.Fields(), where...)
+	var fields, err = ref.Fields(model)
+	if err != nil {
+		return model.New(), err
+	}
+	return QueryByColumnNames(conn, model, fields, where...)
 }
 
 func QueryByColumnNames[T ITable[T]](conn *sql.DB, model T, fieldNames []string, where ...WhereClause) (T, error) {
 	var tableName = model.TableName()
-	var cols, colRefs, err = model.FilterFieldReferences(fieldNames)
+	var cols, colRefs, err = ref.FilterFieldReferences(fieldNames, model)
 	if err != nil {
 		return model, err
 	}
@@ -47,13 +52,17 @@ func QueryByColumnNames[T ITable[T]](conn *sql.DB, model T, fieldNames []string,
 }
 
 func Queries[T ITable[T]](conn *sql.DB, model T, where ...WhereClause) ([]T, error) {
-	return QueriesByColumnNames(conn, model, model.Fields(), where...)
+	var fields, err = ref.Fields(model)
+	if err != nil {
+		return []T{}, err
+	}
+	return QueriesByColumnNames(conn, model, fields, where...)
 }
 
 func QueriesByColumnNames[T ITable[T]](conn *sql.DB, model T, fieldNames []string, where ...WhereClause) ([]T, error) {
 	var results = make([]T, 0)
 	var tableName = model.TableName()
-	var cols, colRefs, err = model.FilterFieldReferences(fieldNames)
+	var cols, colRefs, err = ref.FilterFieldReferences(fieldNames, model)
 	if err != nil {
 		return nil, err
 	}

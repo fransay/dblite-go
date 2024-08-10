@@ -1,8 +1,7 @@
 package dblite
 
 type ITable[T any] interface {
+	New() T
 	Clone() T
 	TableName() string
-	Fields() []string
-	FilterFieldReferences(fields []string) ([]string, []any, error)
 }

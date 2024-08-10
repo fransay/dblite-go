@@ -2,8 +2,8 @@ package dblite
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
 	"time"
 )
 
@@ -44,39 +44,37 @@ func (db *Database) Exec(query string, args ...any) (sql.Result, error) {
 	return db.Conn.Exec(query, args...)
 }
 
-func (db *Database) ExecMany(query string, records [][]any) error {
+func (db *Database) ExecMany(query string, records [][]any) (error, error) {
 	tx, err := db.Conn.Begin()
 	if err != nil {
-		return err
+		return err, nil
 	}
 
 	stmt, err := tx.Prepare(query)
 	if err != nil {
-		tx.Rollback() // rollback if prepare fails
-		return err
+		var prepError = tx.Rollback() // rollback if prepare fails
+		return err, prepError
 	}
 	defer stmt.Close()
 
 	for _, record := range records {
 		_, err = stmt.Exec(record...)
 		if err != nil {
-			//tx.Rollback() // rollback if any exec fails
+			var errRollback error
 			for i := 1; i <= 5; i++ {
-				errRollback := tx.Rollback()
+				errRollback = tx.Rollback()
 				if errRollback == nil {
 					break
 				} else {
-					log.Printf("Failed to rollback after %d attempts: %v", i, errRollback)
+					errRollback = fmt.Errorf("failed to rollback after %d attempts: %v", i, errRollback)
 				}
-
 				time.Sleep(time.Second * 2)
-				log.Printf("Retrying rollback, attempt %d\n", i+2)
 			}
-			return err
+			return err, errRollback
 		}
 	}
 
-	return tx.Commit() // commit all changes at once
+	return tx.Commit(), nil // commit all changes at once
 }
 
 func (db *Database) Query(query string, args ...any) (*sql.Rows, error) {
