@@ -2,8 +2,11 @@ package dblite
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 )
+
+var reCreateTable = regexp.MustCompile(`(?i)CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\s(]+)`)
 
 type Pair[T, U any] struct {
 	A T
@@ -71,8 +74,16 @@ func UpdatePlaceholders(cols []string) string {
 	}), `,`)
 }
 
-func CheckError(err error) {
+func checkError(err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TableNameFromCreateSql(sql string) (string, error) {
+	var matches = reCreateTable.FindStringSubmatch(sql)
+	if len(matches) > 1 {
+		return matches[1], nil
+	}
+	return "", fmt.Errorf("table name not found")
 }

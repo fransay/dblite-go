@@ -12,7 +12,7 @@ var Instance *Database
 func Init(fileName string) {
 	var err error
 	Instance, err = NewDatabase(fileName)
-	CheckError(err)
+	checkError(err)
 }
 
 func DeInit() {
@@ -36,7 +36,7 @@ func NewDatabase(dbpath string) (*Database, error) {
 
 func (db *Database) Close() {
 	if db.Conn != nil {
-		CheckError(db.Conn.Close())
+		checkError(db.Conn.Close())
 	}
 }
 
