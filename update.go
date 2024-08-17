@@ -60,7 +60,7 @@ func Update[T ITable[T]](conn *sql.DB, model T, updateCols []string, wc WhereCla
 		`UPDATE %v SET %v WHERE %v;`,
 		model.TableName(), holders, wc.Where)
 
-	res, err := conn.Exec(query, values...)
+	res, err := Exec(conn, query, values...)
 
 	if err != nil {
 		return false, err

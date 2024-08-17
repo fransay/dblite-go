@@ -47,7 +47,7 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (boo
 		}
 	}
 
-	res, err := conn.Exec(sqlStatement, values...)
+	res, err := Exec(conn, sqlStatement, values...)
 	if err != nil {
 		return false, err
 	}
@@ -58,7 +58,7 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (boo
 	return count == 1, nil
 }
 
-func InsertMany[T ITable[T]](database *Database, models []T, insertCols []string, on On) (error, error) {
+func InsertMany[T ITable[T]](conn *sql.DB, models []T, insertCols []string, on On) (error, error) {
 	if len(models) == 0 {
 		return nil, nil
 	}
@@ -121,5 +121,5 @@ func InsertMany[T ITable[T]](database *Database, models []T, insertCols []string
 		records = append(records, values)
 	}
 
-	return database.ExecMany(sqlStatement, records)
+	return ExecMany(conn, sqlStatement, records)
 }

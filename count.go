@@ -9,7 +9,7 @@ func Count[T ITable[T]](conn *sql.DB, model T, refCol string, wc WhereClause) (i
 	var count int64
 	var query = fmt.Sprintf(
 		`SELECT count(%v) FROM %v WHERE %v;`, refCol, model.TableName(), wc.Where)
-	var rows, err = conn.Query(query, wc.Arguments...)
+	var rows, err = Query(conn, query, wc.Arguments...)
 	if err != nil {
 		return count, err
 	}

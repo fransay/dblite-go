@@ -7,15 +7,19 @@ import (
 	ref "github.com/intdxdt/goreflect"
 )
 
-func Query[T ITable[T]](conn *sql.DB, model T, where ...WhereClause) (T, error) {
+func Query(conn *sql.DB, query string, args ...any) (*sql.Rows, error) {
+	return conn.Query(query, args...)
+}
+
+func QueryModel[T ITable[T]](conn *sql.DB, model T, where ...WhereClause) (T, error) {
 	var fields, err = ref.Fields(model)
 	if err != nil {
 		return model.New(), err
 	}
-	return QueryByColumnNames(conn, model, fields, where...)
+	return QueryModelByColumnNames(conn, model, fields, where...)
 }
 
-func QueryByColumnNames[T ITable[T]](conn *sql.DB, model T, fieldNames []string, where ...WhereClause) (T, error) {
+func QueryModelByColumnNames[T ITable[T]](conn *sql.DB, model T, fieldNames []string, where ...WhereClause) (T, error) {
 	var tableName = model.TableName()
 	var cols, colRefs, err = ref.FilterFieldReferences(fieldNames, model)
 	if err != nil {
@@ -31,7 +35,7 @@ func QueryByColumnNames[T ITable[T]](conn *sql.DB, model T, fieldNames []string,
 		sqlStatement = fmt.Sprintf("SELECT %v FROM %v WHERE %v LIMIT 1;", fields, tableName, wc.Where)
 	}
 
-	rows, err := conn.Query(sqlStatement, args...)
+	rows, err := Query(conn, sqlStatement, args...)
 	if err != nil {
 		return model, err
 	}
@@ -79,7 +83,7 @@ func QueriesByColumnNames[T ITable[T]](conn *sql.DB, model T, fieldNames []strin
 		sqlStatement = fmt.Sprintf("SELECT %v FROM %v WHERE %v;", fields, tableName, wc.Where)
 	}
 
-	rows, err := conn.Query(sqlStatement, args...)
+	rows, err := Query(conn, sqlStatement, args...)
 	if err != nil {
 		return results, err
 	}
