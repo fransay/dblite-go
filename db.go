@@ -5,20 +5,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var Instance *Database
-
-func Init(fileName string) {
-	var err error
-	Instance, err = NewDatabase(fileName)
-	checkError(err)
-}
-
-func DeInit() {
-	if Instance != nil {
-		Instance.Close()
-	}
-}
-
 type Database struct {
 	file string
 	Conn *sql.DB

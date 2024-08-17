@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS model (
 );
 `
 
+var dbInstance *Database
+
 type Model struct {
 	Id      int64  `json:"id"`
 	Email   string `json:"email"`
@@ -44,7 +46,7 @@ func (model *Model) TableName() string {
 }
 
 func (model *Model) Insert() (bool, error) {
-	return Insert(Instance.Conn, model, []string{
+	return Insert(dbInstance.Conn, model, []string{
 		`email`, `name`, `address`,
 	}, On{})
 }
@@ -53,19 +55,17 @@ func initDB() {
 	var dbDIR = "./bin"
 	var dbPath = fmt.Sprintf("%v/test.db", dbDIR)
 	err := os.MkdirAll(dbDIR, 0755)
-	if err != nil {
-		panic(err)
-	}
-	Init(dbPath)
-
-	_, err = Instance.Exec(UserSQLModel)
-	if err != nil {
-		panic(err)
-	}
+	checkError(err)
+	dbInstance, err = NewDatabase(dbPath)
+	checkError(err)
+	_, err = dbInstance.Exec(UserSQLModel)
+	checkError(err)
 }
 
 func deInitDB() {
-	DeInit()
+	if dbInstance != nil {
+		dbInstance.Close()
+	}
 }
 
 func TestDBLite(t *testing.T) {
