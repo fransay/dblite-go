@@ -55,7 +55,7 @@ func QueryModelByColumnNames[T ITable[T]](conn *sql.DB, model T, fieldNames []st
 	return model, nil
 }
 
-func Queries[T ITable[T]](conn *sql.DB, model T, where ...WhereClause) ([]T, error) {
+func QueryModels[T ITable[T]](conn *sql.DB, model T, where ...WhereClause) ([]T, error) {
 	var fields, err = ref.Fields(model)
 	if err != nil {
 		return []T{}, err
