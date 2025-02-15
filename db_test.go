@@ -5,6 +5,7 @@ import (
 	"github.com/franela/goblin"
 	"os"
 	"testing"
+	"time"
 )
 
 const UserSQLModel = `
@@ -28,12 +29,12 @@ type Model struct {
 	Active  int    `json:"active"`
 }
 
-func NewModel() *Model {
-	return &Model{Id: -1}
+func NewModel(id int64) *Model {
+	return &Model{Id: id}
 }
 
 func (model *Model) New() *Model {
-	return NewModel()
+	return NewModel(-1)
 }
 
 func (model *Model) Clone() *Model {
@@ -45,10 +46,30 @@ func (model *Model) TableName() string {
 	return "model"
 }
 
-func (model *Model) Insert() (bool, error) {
+func (model *Model) InsertWithArgs() (bool, error) {
 	return Insert(dbInstance.Conn, model, []string{
-		`email`, `name`, `address`,
-	}, On{})
+		`id`, `email`, `name`, `address`,
+	}, On{
+		On:        "CONFLICT(id) DO UPDATE SET email=?, name=?, address=?",
+		Arguments: []any{model.Email, model.Name, model.Address},
+	})
+}
+
+func (model *Model) InsertOnConflictDoNothing() (bool, error) {
+	return Insert(dbInstance.Conn, model, []string{
+		`id`, `email`, `name`, `address`,
+	}, On{
+		On: "CONFLICT(id) DO NOTHING",
+	})
+}
+
+func (model *Model) Upsert() (bool, error) {
+	return Insert(dbInstance.Conn, model, []string{
+		`id`, `email`, `name`, `address`,
+	}, On{
+		On:            "CONFLICT(id)",
+		UpsertColumns: []string{`email`, `name`, `address`},
+	})
 }
 
 func initDB() {
@@ -71,17 +92,57 @@ func deInitDB() {
 func TestDBLite(t *testing.T) {
 	g := goblin.Goblin(t)
 
-	initDB()
-	defer deInitDB()
-
 	g.Describe("Tests Model Insert", func() {
 		g.It("user insert", func() {
-			var m = NewModel()
+			g.Timeout(1 * time.Hour)
+			initDB()
+			defer deInitDB()
+
+			var m = NewModel(1)
 			m.Email = "email@db.com"
 			m.Name = "model"
 			m.Address = "123 db street"
 			m.Address = "123 db street"
-			bln, err := m.Insert()
+			bln, err := m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+			bln, err = m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsFalse()
+			g.Assert(err).IsNil()
+		})
+
+		g.It("user upsert", func() {
+			g.Timeout(1 * time.Hour)
+			initDB()
+			defer deInitDB()
+
+			var m = NewModel(1)
+			m.Email = "email@db.com"
+			m.Name = "model"
+			m.Address = "123 db street"
+			m.Address = "123 db street"
+			bln, err := m.Upsert()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+			bln, err = m.Upsert()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+		})
+
+		g.It("user upsert with sql args", func() {
+			g.Timeout(1 * time.Hour)
+			initDB()
+			defer deInitDB()
+
+			var m = NewModel(1)
+			m.Email = "email@db.com"
+			m.Name = "model"
+			m.Address = "123 db street"
+			m.Address = "123 db street"
+			bln, err := m.InsertWithArgs()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+			bln, err = m.InsertWithArgs()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
 		})

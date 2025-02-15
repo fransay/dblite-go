@@ -17,18 +17,23 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (boo
 		return false, err
 	}
 
-	var cols = make([]string, 0, len(fields))
-	var values = make([]any, 0, len(fields))
+	var getColsVals = func(inputCols []string) ([]string, []any) {
+		var cols = make([]string, 0, len(fields))
+		var values = make([]any, 0, len(fields))
 
-	var dict = KeysToMap(insertCols, true)
+		var dict = KeysToMap(inputCols, true)
 
-	for i, field := range fields {
-		if !(dict[field]) {
-			continue
+		for i, field := range fields {
+			if !(dict[field]) {
+				continue
+			}
+			cols = append(cols, field)
+			values = append(values, colRefs[i])
 		}
-		cols = append(cols, field)
-		values = append(values, colRefs[i])
+		return cols, values
 	}
+
+	var cols, values = getColsVals(insertCols)
 
 	var columns = ColumnNames(cols)
 	var holders = ColumnPlaceholders(cols)
@@ -38,23 +43,35 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (boo
 		VALUES (%v);`, model.TableName(), columns, holders)
 
 	if len(on.On) > 0 {
+		var sqlOn string
+		if len(on.UpsertColumns) > 0 { //do an upsert given upsert columns
+			var upsertCols, upsertValues = getColsVals(on.UpsertColumns)
+			var colPlaceholders = ColumnEqualPlaceholders(upsertCols)
+			sqlOn = fmt.Sprintf(`%v DO UPDATE SET %v`, on.On, colPlaceholders)
+			values = append(values, upsertValues...)
+		} else if len(on.Arguments) > 0 { //on with arguments - maybe not an upsert
+			sqlOn = on.On
+			values = append(values, on.Arguments...)
+		} else {
+			sqlOn = on.On
+		}
+
 		sqlStatement = fmt.Sprintf(`
 		INSERT INTO %v(%v) 
 		VALUES (%v)
-		ON %v;`, model.TableName(), columns, holders, on.On)
-		for _, v := range on.Arguments {
-			values = append(values, v)
-		}
+		ON %v;`, model.TableName(), columns, holders, sqlOn)
 	}
 
 	res, err := Exec(conn, sqlStatement, values...)
 	if err != nil {
 		return false, err
 	}
+
 	count, err := res.RowsAffected()
 	if err != nil {
 		return false, err
 	}
+
 	return count == 1, nil
 }
 

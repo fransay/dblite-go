@@ -64,6 +64,14 @@ func ColumnNames(cols []string) string {
 	return strings.Join(cols, ",")
 }
 
+func ColumnEqualPlaceholders(cols []string) string {
+	var columns = make([]string, len(cols))
+	for i, col := range cols {
+		columns[i] = fmt.Sprintf("%s=?", col)
+	}
+	return strings.Join(columns, ",")
+}
+
 func ColumnPlaceholders(cols []string) string {
 	return strings.TrimRight(strings.Repeat("?,", len(cols)), ",")
 }

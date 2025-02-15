@@ -1,8 +1,9 @@
 package dblite
 
 type On struct {
-	On        string
-	Arguments []any
+	On            string
+	UpsertColumns []string
+	Arguments     []any
 }
 
 type WhereClause struct {
