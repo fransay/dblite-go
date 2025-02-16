@@ -72,6 +72,14 @@ func ColumnEqualPlaceholders(cols []string) string {
 	return strings.Join(columns, ",")
 }
 
+func ColumnEqualExcludedAttributes(cols []string) string {
+	var columns = make([]string, len(cols))
+	for i, col := range cols {
+		columns[i] = fmt.Sprintf("%s=excluded.%s", col, col)
+	}
+	return strings.Join(columns, ",")
+}
+
 func ColumnPlaceholders(cols []string) string {
 	return strings.TrimRight(strings.Repeat("?,", len(cols)), ",")
 }

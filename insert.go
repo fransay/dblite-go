@@ -46,7 +46,7 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (boo
 		var sqlOn string
 		if len(on.UpsertColumns) > 0 { //do an upsert given upsert columns
 			var upsertCols, upsertValues = getColsVals(on.UpsertColumns)
-			var colPlaceholders = ColumnEqualPlaceholders(upsertCols)
+			var colPlaceholders = ColumnEqualExcludedAttributes(upsertCols)
 			sqlOn = fmt.Sprintf(`%v DO UPDATE SET %v`, on.On, colPlaceholders)
 			values = append(values, upsertValues...)
 		} else if len(on.Arguments) > 0 { //on with arguments - maybe not an upsert
