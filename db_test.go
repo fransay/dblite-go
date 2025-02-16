@@ -64,11 +64,10 @@ func (model *Model) InsertOnConflictDoNothing() (bool, error) {
 }
 
 func (model *Model) Upsert() (bool, error) {
-	return Insert(dbInstance.Conn, model, []string{
-		`id`, `email`, `name`, `address`,
-	}, On{
+	var columns = []string{`id`, `email`, `name`, `address`}
+	return Insert(dbInstance.Conn, model, columns, On{
 		On:            "CONFLICT(id)",
-		UpsertColumns: []string{`email`, `name`, `address`},
+		UpsertColumns: columns[1:],
 	})
 }
 
