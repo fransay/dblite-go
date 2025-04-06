@@ -2,6 +2,7 @@ package dblite
 
 import (
 	"fmt"
+	ref "github.com/intdxdt/goreflect"
 	"regexp"
 	"strings"
 )
@@ -88,6 +89,28 @@ func UpdatePlaceholders(cols []string) string {
 	return strings.Join(MapFn(cols, func(col string) string {
 		return fmt.Sprintf(`%v=?`, col)
 	}), `,`)
+}
+
+func ColumnsByExclusion[T ITable[T]](model T, excludeColumns []string) ([]string, error) {
+	var fields, err = ref.Fields(model)
+	if err != nil {
+		return nil, err
+	}
+
+	fields, _, err = ref.FilterFieldReferences(fields, model)
+	if err != nil {
+		return nil, err
+	}
+
+	var cols = make([]string, 0, len(fields))
+	var dict = KeysToMap(excludeColumns, true)
+	for _, field := range fields {
+		if dict[field] {
+			continue
+		}
+		cols = append(cols, field)
+	}
+	return cols, nil
 }
 
 func checkError(err error) {

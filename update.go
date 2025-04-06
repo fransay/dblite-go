@@ -6,26 +6,12 @@ import (
 	ref "github.com/intdxdt/goreflect"
 )
 
-func UpdateByExclusion[T ITable[T]](conn *sql.DB, model T, excludeCols []string, wc WhereClause) (bool, error) {
-	var fields, err = ref.Fields(model)
+func UpdateByExclusion[T ITable[T]](conn *sql.DB, model T, excludeColumns []string, wc WhereClause) (bool, error) {
+	var columns, err = ColumnsByExclusion(model, excludeColumns)
 	if err != nil {
 		return false, err
 	}
-
-	fields, _, err = ref.FilterFieldReferences(fields, model)
-	if err != nil {
-		return false, err
-	}
-	var updateCols = make([]string, 0, len(fields))
-	var excludeDict = KeysToMap(excludeCols, true)
-
-	for _, field := range fields {
-		if excludeDict[field] {
-			continue
-		}
-		updateCols = append(updateCols, field)
-	}
-	return Update(conn, model, updateCols, wc)
+	return Update(conn, model, columns, wc)
 }
 
 func Update[T ITable[T]](conn *sql.DB, model T, updateCols []string, wc WhereClause) (bool, error) {
