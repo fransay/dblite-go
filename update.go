@@ -6,14 +6,6 @@ import (
 	ref "github.com/intdxdt/goreflect"
 )
 
-func UpdateByExclusion[T ITable[T]](conn *sql.DB, model T, excludeColumns []string, wc WhereClause) (bool, error) {
-	var columns, err = ColumnsByExclusion(model, excludeColumns)
-	if err != nil {
-		return false, err
-	}
-	return Update(conn, model, columns, wc)
-}
-
 func Update[T ITable[T]](conn *sql.DB, model T, updateCols []string, wc WhereClause) (bool, error) {
 	var fields, err = ref.Fields(model)
 	if err != nil {
