@@ -2,10 +2,11 @@ package dblite
 
 import (
 	"fmt"
-	"github.com/franela/goblin"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/franela/goblin"
 )
 
 const UserSQLModel = `
@@ -68,6 +69,28 @@ func (model *Model) Upsert() (bool, error) {
 	return Insert(dbInstance.Conn, model, columns, On{
 		On:            "CONFLICT(id)",
 		UpsertColumns: columns[1:],
+	})
+}
+
+func (model *Model) Update() (bool, error) {
+	var updateColumns = []string{`email`, `name`, `address`}
+	return Update(dbInstance.Conn, model, updateColumns, WhereClause{
+		Where:     ``,
+		Arguments: []any{},
+	})
+}
+func (model *Model) Delete() (int64, error) {
+	return Delete(dbInstance.Conn, model, WhereClause{
+		Where:     ``,
+		Arguments: []any{},
+	})
+}
+
+func (model *Model) Count() (int64, error) {
+	var refCol = ``
+	return Count(dbInstance.Conn, model, refCol, WhereClause{
+		Where:     ``,
+		Arguments: []any{},
 	})
 }
 
@@ -145,6 +168,10 @@ func TestDBLite(t *testing.T) {
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
 		})
+
+		g.It("user update with args", func() {})
+		g.It("user delete with args", func() {})
+		g.It("user count with args", func() {})
 
 	})
 
