@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const UserSQLModel = `
+const sqlModel = `
 DROP TABLE IF EXISTS model;
 CREATE TABLE IF NOT EXISTS model (
 	id            		 INTEGER NOT NULL PRIMARY KEY,
@@ -78,7 +78,7 @@ func initDB() {
 	checkError(err)
 	dbInstance, err = NewDatabase(dbPath)
 	checkError(err)
-	_, err = dbInstance.Exec(UserSQLModel)
+	_, err = dbInstance.Exec(sqlModel)
 	checkError(err)
 }
 
@@ -92,7 +92,7 @@ func TestDBLite(t *testing.T) {
 	g := goblin.Goblin(t)
 
 	g.Describe("Tests Model Insert", func() {
-		g.It("user insert", func() {
+		g.It("model insert", func() {
 			g.Timeout(1 * time.Hour)
 			initDB()
 			defer deInitDB()
@@ -102,15 +102,41 @@ func TestDBLite(t *testing.T) {
 			m.Name = "model"
 			m.Address = "123 db street"
 			m.Address = "123 db street"
+
 			bln, err := m.InsertOnConflictDoNothing()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
+
 			bln, err = m.InsertOnConflictDoNothing()
 			g.Assert(bln).IsFalse()
 			g.Assert(err).IsNil()
 		})
+		g.It("model count", func() {
+			g.Timeout(1 * time.Hour)
+			initDB()
+			defer deInitDB()
 
-		g.It("user upsert", func() {
+			var models = []*Model{
+				{Id: 1, Email: "email1@db.com", Name: "model1", Address: "123 db street"},
+				{Id: 2, Email: "email2@db.com", Name: "model2", Address: "124 db street"},
+				{Id: 3, Email: "email3@db.com", Name: "model1", Address: "125 db street"},
+				{Id: 4, Email: "email4@db.com", Name: "model4", Address: "126 db street"},
+				{Id: 5, Email: "email5@db.com", Name: "model1", Address: "127 db street"},
+			}
+
+			for _, model := range models {
+				bln, err := model.InsertOnConflictDoNothing()
+				g.Assert(bln).IsTrue()
+				g.Assert(err).IsNil()
+			}
+			num, err := Count(dbInstance.Conn, NewModel(-1), `id`, WhereClause{
+				Where: `name=?`, Arguments: []any{"model1"},
+			})
+			g.Assert(err).IsNil()
+			g.Assert(num).Equal(int64(3))
+		})
+
+		g.It("model upsert", func() {
 			g.Timeout(1 * time.Hour)
 			initDB()
 			defer deInitDB()
@@ -120,30 +146,37 @@ func TestDBLite(t *testing.T) {
 			m.Name = "model"
 			m.Address = "123 db street"
 			m.Address = "123 db street"
+
 			bln, err := m.Upsert()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
+
 			bln, err = m.Upsert()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
+
 		})
 
-		g.It("user upsert with sql args", func() {
+		g.It("model upsert with sql args", func() {
 			g.Timeout(1 * time.Hour)
 			initDB()
 			defer deInitDB()
 
 			var m = NewModel(1)
+
 			m.Email = "email@db.com"
 			m.Name = "model"
 			m.Address = "123 db street"
 			m.Address = "123 db street"
+
 			bln, err := m.InsertWithArgs()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
+
 			bln, err = m.InsertWithArgs()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
+
 		})
 
 	})
