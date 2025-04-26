@@ -134,6 +134,11 @@ func TestDBLite(t *testing.T) {
 			})
 			g.Assert(err).IsNil()
 			g.Assert(num).Equal(int64(3))
+			num, err = Count(dbInstance.Conn, NewModel(-1), `id`, WhereClause{
+				Where: `name=?`, Arguments: []any{"model4"},
+			})
+			g.Assert(err).IsNil()
+			g.Assert(num).Equal(int64(1))
 		})
 
 		g.It("model upsert", func() {
