@@ -6,15 +6,15 @@ import (
 	ref "github.com/intdxdt/goreflect"
 )
 
-func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (bool, error) {
+func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (bool, int64, error) {
 	var fields, err = ref.Fields(model)
 	if err != nil {
-		return false, err
+		return false, -1, err
 	}
 
 	fields, colRefs, err := ref.FilterFieldReferences(fields, model)
 	if err != nil {
-		return false, err
+		return false, -1, err
 	}
 
 	var getColsVals = func(inputCols []string) ([]string, []any) {
@@ -64,15 +64,20 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On) (boo
 
 	res, err := Exec(conn, sqlStatement, values...)
 	if err != nil {
-		return false, err
+		return false, -1, err
 	}
 
 	count, err := res.RowsAffected()
 	if err != nil {
-		return false, err
+		return false, -1, err
 	}
 
-	return count == 1, nil
+	insertId, err := res.LastInsertId()
+	if err != nil {
+		return false, -1, err
+	}
+
+	return count == 1, insertId, nil
 }
 
 func InsertMany[T ITable[T]](conn *sql.DB, models []T, insertCols []string, on On) (error, error) {

@@ -46,7 +46,7 @@ func (model *Model) TableName() string {
 	return "model"
 }
 
-func (model *Model) InsertWithArgs() (bool, error) {
+func (model *Model) InsertWithArgs() (bool, int64, error) {
 	return Insert(dbInstance.Conn, model, []string{
 		`id`, `email`, `name`, `address`,
 	}, On{
@@ -55,7 +55,7 @@ func (model *Model) InsertWithArgs() (bool, error) {
 	})
 }
 
-func (model *Model) InsertOnConflictDoNothing() (bool, error) {
+func (model *Model) InsertOnConflictDoNothing() (bool, int64, error) {
 	return Insert(dbInstance.Conn, model, []string{
 		`id`, `email`, `name`, `address`,
 	}, On{
@@ -63,7 +63,7 @@ func (model *Model) InsertOnConflictDoNothing() (bool, error) {
 	})
 }
 
-func (model *Model) Upsert() (bool, error) {
+func (model *Model) Upsert() (bool, int64, error) {
 	var columns = []string{`id`, `email`, `name`, `address`}
 	return Insert(dbInstance.Conn, model, columns, On{
 		On:            "CONFLICT(id)",
@@ -103,11 +103,11 @@ func TestDBLite(t *testing.T) {
 			m.Address = "123 db street"
 			m.Address = "123 db street"
 
-			bln, err := m.InsertOnConflictDoNothing()
+			bln, _, err := m.InsertOnConflictDoNothing()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
 
-			bln, err = m.InsertOnConflictDoNothing()
+			bln, _, err = m.InsertOnConflictDoNothing()
 			g.Assert(bln).IsFalse()
 			g.Assert(err).IsNil()
 		})
@@ -125,7 +125,7 @@ func TestDBLite(t *testing.T) {
 			}
 
 			for _, model := range models {
-				bln, err := model.InsertOnConflictDoNothing()
+				bln, _, err := model.InsertOnConflictDoNothing()
 				g.Assert(bln).IsTrue()
 				g.Assert(err).IsNil()
 			}
@@ -152,11 +152,11 @@ func TestDBLite(t *testing.T) {
 			m.Address = "123 db street"
 			m.Address = "123 db street"
 
-			bln, err := m.Upsert()
+			bln, _, err := m.Upsert()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
 
-			bln, err = m.Upsert()
+			bln, _, err = m.Upsert()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
 
@@ -174,11 +174,11 @@ func TestDBLite(t *testing.T) {
 			m.Address = "123 db street"
 			m.Address = "123 db street"
 
-			bln, err := m.InsertWithArgs()
+			bln, _, err := m.InsertWithArgs()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
 
-			bln, err = m.InsertWithArgs()
+			bln, _, err = m.InsertWithArgs()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
 
