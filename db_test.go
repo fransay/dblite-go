@@ -75,22 +75,22 @@ func (model *Model) Upsert() (bool, error) {
 func (model *Model) Update() (bool, error) {
 	var updateColumns = []string{`email`, `name`, `address`}
 	return Update(dbInstance.Conn, model, updateColumns, WhereClause{
-		Where:     ``,
-		Arguments: []any{},
+		Where:     `WHERE id = ?"`,
+		Arguments: []any{model.Id},
 	})
 }
 func (model *Model) Delete() (int64, error) {
 	return Delete(dbInstance.Conn, model, WhereClause{
-		Where:     ``,
-		Arguments: []any{},
+		Where:     `WHERE id = ?`,
+		Arguments: []any{model.Id},
 	})
 }
 
 func (model *Model) Count() (int64, error) {
-	var refCol = ``
+	var refCol = `email`
 	return Count(dbInstance.Conn, model, refCol, WhereClause{
-		Where:     ``,
-		Arguments: []any{},
+		Where:     `WHERE email IS NOT NULL`,
+		Arguments: []any{model.Email},
 	})
 }
 
@@ -113,17 +113,15 @@ func deInitDB() {
 
 func TestDBLite(t *testing.T) {
 	g := goblin.Goblin(t)
-
 	g.Describe("Tests Model Insert", func() {
-		g.It("user insert", func() {
-			g.Timeout(1 * time.Hour)
-			initDB()
-			defer deInitDB()
+		initDB()
+		defer initDB()
 
+		g.It("user insert on conflict do nothing", func() {
+			g.Timeout(1 * time.Hour)
 			var m = NewModel(1)
-			m.Email = "email@db.com"
-			m.Name = "model"
-			m.Address = "123 db street"
+			m.Email = "email@db1.com"
+			m.Name = "model1"
 			m.Address = "123 db street"
 			bln, err := m.InsertOnConflictDoNothing()
 			g.Assert(bln).IsTrue()
@@ -133,46 +131,98 @@ func TestDBLite(t *testing.T) {
 			g.Assert(err).IsNil()
 		})
 
-		g.It("user upsert", func() {
+		g.It("user insert on conflict do nothing", func() {
 			g.Timeout(1 * time.Hour)
-			initDB()
-			defer deInitDB()
+			var m = NewModel(2)
+			m.Email = "email@db2.com"
+			m.Name = "model2"
+			m.Address = "124 db street"
+			bln, err := m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+			bln, err = m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsFalse()
+			g.Assert(err).IsNil()
+		})
 
-			var m = NewModel(1)
-			m.Email = "email@db.com"
-			m.Name = "model"
-			m.Address = "123 db street"
-			m.Address = "123 db street"
+		g.It("user insert on conflict do nothing", func() {
+			g.Timeout(1 * time.Hour)
+			var m = NewModel(3)
+			m.Email = "email@db3.com"
+			m.Name = "model3"
+			m.Address = "125 db street"
+			bln, err := m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+			bln, err = m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsFalse()
+			g.Assert(err).IsNil()
+		})
+
+		g.It("user insert on conflict do nothing", func() {
+			g.Timeout(1 * time.Hour)
+			var m = NewModel(4)
+			m.Email = "email@db4.com"
+			m.Name = "model4"
+			m.Address = "126 db street"
+			bln, err := m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+			bln, err = m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsFalse()
+			g.Assert(err).IsNil()
+		})
+
+		g.It("user insert on conflict do nothing", func() {
+			g.Timeout(1 * time.Hour)
+			var m = NewModel(5)
+			m.Email = "email@db5.com"
+			m.Name = "model5"
+			m.Address = "127 db street"
+			bln, err := m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+			bln, err = m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsFalse()
+			g.Assert(err).IsNil()
+		})
+	})
+
+	g.Describe("Test Model Upsert", func() {
+		g.Timeout(1 * time.Hour)
+		g.It("user upsert model", func() {
+			var m = NewModel(5)
+			m.Email = "email5@db.com"
+			m.Name = "model5"
+			m.Address = "127 db street"
 			bln, err := m.Upsert()
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
-			bln, err = m.Upsert()
-			g.Assert(bln).IsTrue()
-			g.Assert(err).IsNil()
 		})
-
-		g.It("user upsert with sql args", func() {
-			g.Timeout(1 * time.Hour)
-			initDB()
-			defer deInitDB()
-
-			var m = NewModel(1)
-			m.Email = "email@db.com"
-			m.Name = "model"
-			m.Address = "123 db street"
-			m.Address = "123 db street"
-			bln, err := m.InsertWithArgs()
-			g.Assert(bln).IsTrue()
-			g.Assert(err).IsNil()
-			bln, err = m.InsertWithArgs()
-			g.Assert(bln).IsTrue()
-			g.Assert(err).IsNil()
-		})
-
-		g.It("user update with args", func() {})
-		g.It("user delete with args", func() {})
-		g.It("user count with args", func() {})
-
 	})
 
+	g.Describe("Test Model Count", func() {
+		g.Timeout(1 * time.Hour)
+		g.It("test count models", func() {
+			var m = NewModel(3)
+			m.Email = "email@db3.com"
+			m.Name = "model3"
+			m.Address = "125 db street"
+			n, err := m.Count()
+			g.Assert(n).Equal(5)
+			g.Assert(err).IsNil()
+		})
+	})
+	g.Describe("Test Model Delete", func() {
+		g.Timeout(1 * time.Hour)
+		g.It("test delete models", func() {
+			var m = NewModel(3)
+			m.Email = "email@db3.com"
+			m.Name = "model3"
+			m.Address = "125 db street"
+			n, err := m.Delete()
+			g.Assert(n).Equal(1)
+			g.Assert(err).IsNil()
+		})
+	})
 }

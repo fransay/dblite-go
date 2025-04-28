@@ -3,6 +3,9 @@ package dblite
 import (
 	"database/sql"
 	"fmt"
+
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type FileBasedDB struct {
@@ -70,12 +73,36 @@ func NewDB(serverBasedDB ServerBasedDB, fileBasedDB FileBasedDB) *DB {
 
 }
 
-type OmniDatabase struct {
+type OmniDB struct {
 	DB   DB
 	Conn *sql.DB
 }
 
-func NewOmniDatabase(db DB) *OmniDatabase {
+func NewOmniDatabase(db DB) *OmniDB {
 	var conn *sql.DB
-	return &OmniDatabase{DB: db, Conn: conn}
+	return &OmniDB{DB: db, Conn: conn}
+}
+
+func (omnidb *OmniDB) OpenConnection() *sql.DB {
+	db, err := sql.Open(omnidb.DB.Protocol, omnidb.DB.ConnString)
+	if err != nil {
+		checkError(err)
+	}
+	return db
+}
+
+func (omnidb *OmniDB) Close() {
+	if omnidb.Conn != nil {
+		checkError(omnidb.Conn.Close())
+	}
+}
+
+func (omnidb *OmniDB) Exec(query string, args ...any) (sql.Result, error) {
+	return Exec(omnidb.Conn, query, args...)
+}
+func (omnidb *OmniDB) ExecMany(query string, records [][]any) (error, error) {
+	return ExecMany(omnidb.Conn, query, records)
+}
+func (omnidb *OmniDB) Query(query string, args ...any) (*sql.Rows, error) {
+	return omnidb.Conn.Query(query, args...)
 }
