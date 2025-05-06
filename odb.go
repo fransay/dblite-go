@@ -33,6 +33,7 @@ func (ds *DatabaseSource) Close() {
 func (ds *DatabaseSource) Exec(query string, args ...any) (sql.Result, error) {
 	return Exec(ds.Conn, query, args...)
 }
+
 func (ds *DatabaseSource) ExecMany(query string, records [][]any) (error, error) {
 	return ExecMany(ds.Conn, query, records)
 }

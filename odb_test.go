@@ -1,6 +1,7 @@
 package dblite
 
 import (
+	"fmt"
 	"github.com/franela/goblin"
 	"testing"
 	"time"
@@ -39,15 +40,17 @@ func (omodel *OModel) Clone() *OModel {
 }
 
 func (omodel *OModel) TableName() string {
-	return "model"
+	return "omodel"
 }
 
 var dbSource *DatabaseSource
 
 func initPostgresDB() {
 	var dbType = "postgres"
-	var uri = "postgresql://postgres:1234@localhost:5432/postgres?sslmode=disable"
-	dbSource, err := NewDatabaseSource(dbType, uri)
+	var uri = "user=postgres password=1234 dbname=postgres host=localhost port=5432 sslmode=disable"
+	var err error
+	dbSource, err = NewDatabaseSource(dbType, uri)
+	fmt.Printf("dbSource: %+v\n", dbSource)
 	checkError(err)
 	_, err = dbSource.Exec(sqlOModel)
 	checkError(err)
@@ -62,18 +65,21 @@ func deInitPostgresDB() {
 func TestODB(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("Test ODB connection", func() {
-		g.Timeout(1 * time.Hour)
-		initPostgresDB()
-		defer deInitPostgresDB()
+		g.It("", func() {
+			g.Timeout(1 * time.Hour)
+			initPostgresDB()
+			defer deInitPostgresDB()
 
-		om := NewOModel(1)
-		om.Name = "omodel1"
-		om.Email = "omodel@odb.com"
-		om.Address = "2221 454 343"
-		cols := []string{"id", "email", "name", "address"}
-		on := On{}
-		bln, _, err := Insert(dbSource.Conn, om, cols, on, "postgres")
-		g.Assert(bln).IsTrue()
-		g.Assert(err).IsNil()
+			om := NewOModel(1)
+			om.Name = "omodel1"
+			om.Email = "omodel@odb.com"
+			om.Address = "2221 454 343"
+			cols := []string{"id", "email", "name", "address"}
+			on := On{}
+			bln, _, err := Insert(dbSource.Conn, om, cols, on, "postgres")
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+		})
+
 	})
 }

@@ -34,7 +34,6 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On, dbTy
 	}
 
 	var cols, values = getColsVals(insertCols)
-
 	var columns = ColumnNames(cols)
 	var holders = ColumnPlaceholders(cols, dbType)
 
@@ -60,6 +59,7 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On, dbTy
 		INSERT INTO %v(%v) 
 		VALUES (%v)
 		ON %v;`, model.TableName(), columns, holders, sqlOn)
+		fmt.Println("sql statement = ", sqlStatement)
 	}
 
 	res, err := Exec(conn, sqlStatement, values...)
@@ -71,12 +71,15 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On, dbTy
 	if err != nil {
 		return false, -1, err
 	}
-
-	insertId, err := res.LastInsertId()
-	if err != nil {
-		return false, -1, err
+	var insertId int64
+	if dbType == "postgres" {
+		insertId = 0
+	} else {
+		insertId, err = res.LastInsertId()
+		if err != nil {
+			return false, -1, err
+		}
 	}
-
 	return count == 1, insertId, nil
 }
 
