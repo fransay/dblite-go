@@ -207,5 +207,4 @@ func TestDBLite(t *testing.T) {
 			g.Assert(err).IsNil()
 		})
 	})
-
 }
