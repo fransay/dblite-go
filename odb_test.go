@@ -1,7 +1,6 @@
 package dblite
 
 import (
-	"fmt"
 	"github.com/franela/goblin"
 	"testing"
 	"time"
@@ -50,7 +49,6 @@ func initPostgresDB() {
 	var uri = "user=postgres password=1234 dbname=postgres host=localhost port=5432 sslmode=disable"
 	var err error
 	dbSource, err = NewDatabaseSource(dbType, uri)
-	fmt.Printf("dbSource: %+v\n", dbSource)
 	checkError(err)
 	_, err = dbSource.Exec(sqlOModel)
 	checkError(err)
@@ -65,7 +63,7 @@ func deInitPostgresDB() {
 func TestODB(t *testing.T) {
 	g := goblin.Goblin(t)
 	g.Describe("Test ODB connection", func() {
-		g.It("", func() {
+		g.It("test insert", func() {
 			g.Timeout(1 * time.Hour)
 			initPostgresDB()
 			defer deInitPostgresDB()
@@ -75,11 +73,59 @@ func TestODB(t *testing.T) {
 			om.Email = "omodel@odb.com"
 			om.Address = "2221 454 343"
 			cols := []string{"id", "email", "name", "address"}
-			on := On{}
+			on := On{
+				On: "CONFLICT(id) DO UPDATE SET email=$1, name=$2, address=$3",
+			}
 			bln, _, err := Insert(dbSource.Conn, om, cols, on, "postgres")
 			g.Assert(bln).IsTrue()
 			g.Assert(err).IsNil()
 		})
 
+		g.It("test upsert", func() {
+			g.Timeout(1 * time.Hour)
+			initPostgresDB()
+			defer deInitPostgresDB()
+
+			om := NewOModel(1)
+			om.Name = "omodel1"
+			om.Email = "omodel@odb.com"
+			om.Address = "2221 454 343"
+			cols := []string{"id", "email", "name", "address"}
+			on := On{
+				On:            "CONFLICT(id)",
+				UpsertColumns: cols[1:],
+			}
+			bln, _, err := Insert(dbSource.Conn, om, cols, on, "postgres")
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+
+			bln, _, err = Insert(dbSource.Conn, om, cols, on, "postgres")
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+
+		})
+
+		g.It("test delete", func() {
+			g.Timeout(1 * time.Hour)
+			initDB()
+			defer deInitDB()
+
+			var m = NewModel(100)
+			m.Email = "email100@db.com"
+			m.Name = "model100"
+			m.Address = "123 db street"
+			m.Address = "123 db street"
+
+			bln, _, err := m.InsertOnConflictDoNothing()
+			g.Assert(bln).IsTrue()
+			g.Assert(err).IsNil()
+
+			w := WhereClause{
+				Where: `name=?`, Arguments: []any{"model100"},
+			}
+			n, err := Delete(dbInstance.Conn, m, w)
+			g.Assert(n).Equal(int64(1))
+			g.Assert(err).IsNil()
+		})
 	})
 }

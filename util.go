@@ -78,17 +78,18 @@ func ColumnEqualPlaceholders(cols []string, dbType string) string {
 	return strings.Join(columns, ", ")
 }
 
-func ColumnEqualExcludedAttributes(cols []string, dbType string) string {
-	var columns = make([]string, len(cols))
+func ColumnEqualParamAttributes(cols []string, dbType string) string {
+	startIndex := len(cols) + 2
+	updates := make([]string, len(cols))
 	for i, col := range cols {
 		switch dbType {
 		case "postgres":
-			columns[i] = fmt.Sprintf("%s = EXCLUDED.%s", col, col)
-		default: // defaults to sqlite3 and others
-			columns[i] = fmt.Sprintf("%s = excluded.%s", col, col)
+			updates[i] = fmt.Sprintf("%s = $%d", col, startIndex+i)
+		default:
+			updates[i] = fmt.Sprintf("%s = ?", col)
 		}
 	}
-	return strings.Join(columns, ", ")
+	return strings.Join(updates, ", ")
 }
 
 func ColumnPlaceholders(cols []string, dbType string) string {

@@ -45,7 +45,7 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On, dbTy
 		var sqlOn string
 		if len(on.UpsertColumns) > 0 { //do an upsert given upsert columns
 			var upsertCols, upsertValues = getColsVals(on.UpsertColumns)
-			var colPlaceholders = ColumnEqualExcludedAttributes(upsertCols, dbType)
+			var colPlaceholders = ColumnEqualParamAttributes(upsertCols, dbType)
 			sqlOn = fmt.Sprintf(`%v DO UPDATE SET %v`, on.On, colPlaceholders)
 			values = append(values, upsertValues...)
 		} else if len(on.Arguments) > 0 { //on with arguments - maybe not an upsert
@@ -54,12 +54,10 @@ func Insert[T ITable[T]](conn *sql.DB, model T, insertCols []string, on On, dbTy
 		} else {
 			sqlOn = on.On
 		}
-
 		sqlStatement = fmt.Sprintf(`
 		INSERT INTO %v(%v) 
 		VALUES (%v)
 		ON %v;`, model.TableName(), columns, holders, sqlOn)
-		fmt.Println("sql statement = ", sqlStatement)
 	}
 
 	res, err := Exec(conn, sqlStatement, values...)
